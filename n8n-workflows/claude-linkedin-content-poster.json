@@ -1,0 +1,197 @@
+{
+  "name": "Claude → LinkedIn Auto Poster",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e1a1a1a1-0001-4000-8000-000000000001",
+      "name": "Test manuel",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "e1a1a1a1-0002-4000-8000-000000000002",
+      "name": "Planification quotidienne",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "topic",
+              "type": "string",
+              "value": "les tendances de l'intelligence artificielle appliquée aux entreprises"
+            },
+            {
+              "id": "a2",
+              "name": "tone",
+              "type": "string",
+              "value": "professionnel, inspirant, accessible"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1a1a1a1-0003-4000-8000-000000000003",
+      "name": "Sujet du post",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-5\",\n  \"max_tokens\": 600,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Rédige un post LinkedIn engageant en français sur le sujet suivant : {{ $json.topic }}. Ton souhaité : {{ $json.tone }}. Contraintes : 120 à 200 mots, pas de markdown, phrases courtes, termine par 3 à 5 hashtags pertinents.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "e1a1a1a1-0004-4000-8000-000000000004",
+      "name": "Claude - Génération du contenu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst text = response.content?.[0]?.text?.trim();\n\nif (!text) {\n  throw new Error('Claude n\\'a renvoyé aucun texte exploitable.');\n}\n\nreturn [{ json: { postText: text } }];"
+      },
+      "id": "e1a1a1a1-0005-4000-8000-000000000005",
+      "name": "Extraire le texte du post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "post",
+        "operation": "create",
+        "postAs": "person",
+        "text": "={{ $json.postText }}",
+        "shareMediaCategory": "NONE",
+        "additionalFields": {}
+      },
+      "id": "e1a1a1a1-0006-4000-8000-000000000006",
+      "name": "Publier sur LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        660,
+        180
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "",
+          "name": "LinkedIn account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Test manuel": {
+      "main": [
+        [
+          {
+            "node": "Sujet du post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Planification quotidienne": {
+      "main": [
+        [
+          {
+            "node": "Sujet du post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sujet du post": {
+      "main": [
+        [
+          {
+            "node": "Claude - Génération du contenu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - Génération du contenu": {
+      "main": [
+        [
+          {
+            "node": "Extraire le texte du post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraire le texte du post": {
+      "main": [
+        [
+          {
+            "node": "Publier sur LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
