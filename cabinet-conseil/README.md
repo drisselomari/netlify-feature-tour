@@ -12,6 +12,7 @@ Ce dossier rassemble les livrables produits pour la création d'un cabinet de co
 | [`catalogue-services.md`](./catalogue-services.md) | Offres de services et grille tarifaire indicative |
 | [`kit-appels-offres/memoire-technique-template.md`](./kit-appels-offres/memoire-technique-template.md) | Modèle de mémoire technique pour répondre rapidement à un appel d'offres |
 | [`kit-appels-offres/bordereau-prix-template.md`](./kit-appels-offres/bordereau-prix-template.md) | Modèle de décomposition du prix (DPGF) |
+| [`pipeline-opportunites.md`](./pipeline-opportunites.md) | Premières pistes réelles d'appels d'offres/AMI identifiées par recherche, avec sources |
 
 ## Complément — automatisation
 
