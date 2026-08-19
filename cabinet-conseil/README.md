@@ -13,6 +13,8 @@ Ce dossier rassemble les livrables produits pour la création d'un cabinet de co
 | [`kit-appels-offres/memoire-technique-template.md`](./kit-appels-offres/memoire-technique-template.md) | Modèle de mémoire technique pour répondre rapidement à un appel d'offres |
 | [`kit-appels-offres/bordereau-prix-template.md`](./kit-appels-offres/bordereau-prix-template.md) | Modèle de décomposition du prix (DPGF) |
 | [`pipeline-opportunites.md`](./pipeline-opportunites.md) | Premières pistes réelles d'appels d'offres/AMI identifiées par recherche, avec sources |
+| [`immatriculation-auto-entrepreneur.md`](./immatriculation-auto-entrepreneur.md) | Procédure exacte, sourcée, pour obtenir l'ICE — le prérequis légal qui débloque toute candidature |
+| [`kit-appels-offres/messages-prise-de-contact.md`](./kit-appels-offres/messages-prise-de-contact.md) | E-mail et message LinkedIn prêts à personnaliser pour vérifier le statut réel de la piste MENPS |
 
 ## Complément — automatisation
 
