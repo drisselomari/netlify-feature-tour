@@ -1,0 +1,251 @@
+{
+  "name": "Veille marchés/appels d'offres + digest qualifié",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "b2c2c2c2-0001-4000-8000-000000000001",
+      "name": "Planification quotidienne",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.google.com/alerts/feeds/REMPLACER_PAR_VOTRE_ID_ALERT/REMPLACER_PAR_VOTRE_FLUX"
+      },
+      "id": "b2c2c2c2-0002-4000-8000-000000000002",
+      "name": "Flux RSS - Google Alerts",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        0
+      ],
+      "notes": "Créez une alerte Google (google.com/alerts) sur des mots-clés comme : \"appel d'offres ingénierie pédagogique Maroc\", \"appel d'offres formation digitale\", \"AMI éducation Afrique\". Récupérez le flux RSS de l'alerte et collez son URL ici. Vous pouvez ajouter plusieurs alertes en dupliquant ce nœud et en fusionnant les résultats avec un nœud Merge."
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('node');\nif (!staticData.seenLinks) {\n  staticData.seenLinks = [];\n}\n\nconst seen = new Set(staticData.seenLinks);\nconst newItems = [];\n\nfor (const item of $input.all()) {\n  const link = item.json.link;\n  if (link && !seen.has(link)) {\n    newItems.push(item);\n    seen.add(link);\n  }\n}\n\n// Garde un historique borné pour éviter une croissance illimitée\nstaticData.seenLinks = Array.from(seen).slice(-500);\n\nreturn newItems;"
+      },
+      "id": "b2c2c2c2-0003-4000-8000-000000000003",
+      "name": "Filtrer les nouveaux éléments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "anthropicApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-5\",\n  \"max_tokens\": 500,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Tu aides un cabinet de conseil en ingénierie pédagogique et automatisation IA (Maroc/Afrique francophone) à qualifier une veille d'opportunités (marchés publics, appels d'offres, appels à propositions). Voici un élément de veille :\\n\\nTitre : {{ $json.title }}\\nRésumé : {{ $json.contentSnippet || $json.content || '' }}\\nLien : {{ $json.link }}\\n\\nRéponds STRICTEMENT en JSON valide, sans texte autour, avec ce format exact :\\n{\\\"pertinent\\\": true ou false, \\\"score\\\": entier de 1 à 5, \\\"client_probable\\\": \\\"...\\\", \\\"echeance_probable\\\": \\\"...\\\", \\\"resume\\\": \\\"...\\\", \\\"angle_approche\\\": \\\"...\\\"}\\n\\nScore 5 = correspond exactement à l'offre du cabinet (ingénierie pédagogique, digitalisation de la formation, automatisation IA). Score 1 = hors sujet.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "b2c2c2c2-0004-4000-8000-000000000004",
+      "name": "Claude - Qualifier l'opportunité",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.item.json;\nconst raw = response.content?.[0]?.text?.trim() || '{}';\n\nlet analyse;\ntry {\n  analyse = JSON.parse(raw);\n} catch (e) {\n  analyse = { pertinent: false, score: 0, resume: 'Analyse Claude non exploitable', angle_approche: '' };\n}\n\nconst source = $('Filtrer les nouveaux éléments').item.json;\n\nreturn [{\n  json: {\n    titre: source.title,\n    lien: source.link,\n    ...analyse\n  }\n}];"
+      },
+      "id": "b2c2c2c2-0005-4000-8000-000000000005",
+      "name": "Extraire l'analyse Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b2c2c2c2-0006-4000-8000-000000000006",
+      "name": "Score >= 3 ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nif (items.length === 0) {\n  return [];\n}\n\nconst rows = items.map(i => {\n  const d = i.json;\n  return `<tr>\n    <td><a href=\"${d.lien}\">${d.titre}</a></td>\n    <td>${d.score}/5</td>\n    <td>${d.client_probable || ''}</td>\n    <td>${d.echeance_probable || ''}</td>\n    <td>${d.resume || ''}</td>\n    <td>${d.angle_approche || ''}</td>\n  </tr>`;\n}).join('\\n');\n\nconst html = `<h2>Veille marchés/appels d'offres — ${new Date().toLocaleDateString('fr-FR')}</h2>\n<p>${items.length} opportunité(s) pertinente(s) détectée(s) aujourd'hui.</p>\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\">\n<tr><th>Titre</th><th>Score</th><th>Client probable</th><th>Échéance</th><th>Résumé</th><th>Angle d'approche</th></tr>\n${rows}\n</table>`;\n\nreturn [{ json: { html, count: items.length } }];"
+      },
+      "id": "b2c2c2c2-0007-4000-8000-000000000007",
+      "name": "Construire le digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "veille@REMPLACER-VOTRE-DOMAINE.com",
+        "toEmail": "REMPLACER-PAR-VOTRE-EMAIL@example.com",
+        "subject": "=Veille marchés — {{ $json.count }} opportunité(s) qualifiée(s)",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "id": "b2c2c2c2-0008-4000-8000-000000000008",
+      "name": "Envoyer le digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Planification quotidienne": {
+      "main": [
+        [
+          {
+            "node": "Flux RSS - Google Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flux RSS - Google Alerts": {
+      "main": [
+        [
+          {
+            "node": "Filtrer les nouveaux éléments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrer les nouveaux éléments": {
+      "main": [
+        [
+          {
+            "node": "Claude - Qualifier l'opportunité",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude - Qualifier l'opportunité": {
+      "main": [
+        [
+          {
+            "node": "Extraire l'analyse Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraire l'analyse Claude": {
+      "main": [
+        [
+          {
+            "node": "Score >= 3 ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score >= 3 ?": {
+      "main": [
+        [
+          {
+            "node": "Construire le digest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Construire le digest": {
+      "main": [
+        [
+          {
+            "node": "Envoyer le digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
