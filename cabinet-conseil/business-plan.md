@@ -4,7 +4,7 @@
 
 ## 1. Positionnement
 
-**Nom provisoire :** `[À VALIDER]` (ex. "Novapte Conseil", "Alma Formation & IA")
+**Nom provisoire :** `[À VALIDER]` — "Passerelle Conseil" retenu comme nom de travail pour la maquette du site vitrine (cf. `site/index.html`), à confirmer ou remplacer (autres pistes : "Novapte Conseil", "Alma Formation & IA").
 
 **Mission :** Aider les établissements d'enseignement, organismes de formation et entreprises à moderniser leurs dispositifs pédagogiques et leurs processus internes en combinant ingénierie pédagogique académique et automatisation par l'IA.
 
